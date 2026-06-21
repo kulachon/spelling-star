@@ -22,8 +22,10 @@
         .subtitle { text-align: center; color: #888; font-size: 1.2em; margin-bottom: 30px; }
         .btn { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); color: white; border: none; padding: 15px 40px; font-size: 1.3em; border-radius: 50px; cursor: pointer; font-family: inherit; font-weight: bold; box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3); transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; }
         .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
         .btn-green { background: linear-gradient(135deg, #4ECDC4, #44A08D); box-shadow: 0 5px 20px rgba(78, 205, 196, 0.3); }
         .btn-blue { background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3); }
+        .btn-yellow { background: linear-gradient(135deg, #FFD93D, #FF9F1C); box-shadow: 0 5px 20px rgba(255, 159, 28, 0.3); color: #7A4B00; }
         .center-btn { text-align: center; margin-top: 30px; }
         .input-field { width: 100%; padding: 15px 20px; font-size: 1.2em; border: 3px solid #FFDAB9; border-radius: 20px; font-family: inherit; text-align: center; transition: border-color 0.3s; outline: none; }
         .input-field:focus { border-color: #FF6B6B; }
@@ -101,6 +103,13 @@
         .final-avatar-display .avatar-name { font-size: 1.5em; color: #FF6B6B; font-weight: bold; margin-top: 15px; }
         .final-avatar-display .avatar-accessories { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
         .final-avatar-display .acc-badge { background: linear-gradient(135deg, #FFDAB9, #FFE4E1); padding: 5px 15px; border-radius: 20px; font-size: 0.9em; color: #666; }
+        .save-status { text-align: center; min-height: 24px; margin-top: 10px; color: #44A08D; font-weight: bold; }
+        .accessory-toggle-panel { margin: 20px auto 0; max-width: 680px; padding: 18px; background: linear-gradient(135deg, #fff9e6, #fff0f0); border-radius: 20px; border: 2px dashed #FFDAB9; }
+        .accessory-toggle-title { color: #FF6B6B; font-weight: bold; margin-bottom: 12px; font-size: 1.1em; }
+        .accessory-toggle-list { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .acc-toggle { display: inline-flex; align-items: center; gap: 6px; background: white; border: 2px solid #FFDAB9; border-radius: 20px; padding: 8px 12px; color: #666; cursor: pointer; transition: all 0.2s; }
+        .acc-toggle:hover { border-color: #FF6B6B; transform: translateY(-2px); }
+        .acc-toggle input { accent-color: #FF6B6B; }
 
         @media (max-width: 600px) {
             .game-container { padding: 20px; }
@@ -110,6 +119,7 @@
             .hint-buttons { flex-direction: column; align-items: center; }
             .hint-btn { width: 100%; max-width: 280px; justify-content: center; }
             .avatar-preview { width: 150px; height: 200px; }
+            .btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -127,6 +137,9 @@
             </div>
             <div class="center-btn">
                 <button class="btn" onclick="goToAvatarCreator()">🎨 สร้างตัวละคร</button>
+            </div>
+            <div class="center-btn" id="homeContinueWrap" style="display: none;">
+                <button class="btn btn-yellow" onclick="continueSavedGame()">▶ เล่นต่อจากที่บันทึกไว้</button>
             </div>
         </div>
 
@@ -157,6 +170,9 @@
             <h1 class="title" style="font-size: 2em;">📚 เลือกชุดคำศัพท์</h1>
             <p class="subtitle">เลือกชุดคำศัพท์ที่ต้องการฝึกสะกด</p>
             <div class="sets-grid" id="setsGrid"></div>
+            <div class="center-btn" id="chooseContinueWrap" style="display: none;">
+                <button class="btn btn-yellow" onclick="continueSavedGame()">▶ เล่นต่อจากที่บันทึกไว้</button>
+            </div>
             <div class="center-btn">
                 <button class="btn btn-blue" onclick="showScreen('homeScreen')">🔙 กลับหน้าแรก</button>
             </div>
@@ -183,9 +199,11 @@
                 <div class="hint-status" id="hintStatus"></div>
             </div>
             <input type="text" class="input-field" id="answerInput" placeholder="พิมพ์คำตอบที่นี่..." autocomplete="off">
-            <div class="center-btn">
-                <button class="btn btn-green" onclick="checkAnswer()">✓ ตรวจคำตอบ</button>
+            <div class="buttons-row">
+                <button class="btn btn-green" id="checkAnswerButton" onclick="checkAnswer()">✓ ตรวจคำตอบ</button>
+                <button class="btn btn-blue" onclick="saveProgress(true)">💾 บันทึกเกม</button>
             </div>
+            <div class="save-status" id="saveStatus"></div>
             <div class="feedback" id="feedback">
                 <div class="feedback-emoji" id="feedbackEmoji"></div>
                 <div class="feedback-text" id="feedbackText"></div>
@@ -210,12 +228,14 @@
                 <div class="avatar-preview" id="finalAvatarPreview"></div>
                 <div class="avatar-name" id="avatarName"></div>
                 <div class="avatar-accessories" id="avatarAccessories"></div>
+                <div class="accessory-toggle-panel" id="accessoryTogglePanel"></div>
             </div>
             <div class="missed-words" id="missedWordsContainer" style="display: none;">
                 <h3 style="text-align: center; margin-bottom: 15px; color: #FF6B6B;">📋 คำที่สะกดผิด</h3>
                 <div id="missedWordsList"></div>
             </div>
             <div class="buttons-row">
+                <button class="btn btn-yellow" onclick="downloadFinalAvatarImage()">🖼️ เซฟรูปตัวละคร</button>
                 <button class="btn" onclick="playAgain()">🔁 เล่นชุดนี้อีกครั้ง</button>
                 <button class="btn btn-green" onclick="practiceMissed()">🎯 ฝึกคำที่ผิด</button>
                 <button class="btn btn-blue" onclick="showScreen('chooseSetScreen')">📚 เลือกชุดอื่น</button>
@@ -309,6 +329,145 @@ let currentSet = null, currentWordIndex = 0, score = 0, missedWords = [], attemp
 let totalStars = 0, isPracticingMissed = false, practiceWords = [];
 let hintUsed = [false, false, false], revealedLetters = [];
 let pendingReward = null;
+let answerLocked = false;
+const PROFILE_KEY = 'spellingStarProfileV1';
+const PROGRESS_KEY = 'spellingStarProgressV1';
+
+function normalizeAvatar(avatar) {
+    avatar = avatar || {};
+    const accessories = Array.isArray(avatar.accessories) ? avatar.accessories.slice() : [];
+    const equippedAccessories = Array.isArray(avatar.equippedAccessories) ? avatar.equippedAccessories.slice() : accessories.slice();
+    return {
+        hairStyle: avatar.hairStyle || 'long',
+        hairColor: avatar.hairColor || '#8B4513',
+        skinColor: avatar.skinColor || '#FFDFC4',
+        accessories: accessories,
+        equippedAccessories: equippedAccessories.filter(function(accId) { return accessories.indexOf(accId) !== -1; })
+    };
+}
+
+function getEquippedAccessories() {
+    playerAvatar = normalizeAvatar(playerAvatar);
+    return playerAvatar.equippedAccessories;
+}
+
+function saveProfile() {
+    try {
+        const nameInput = document.getElementById('playerName');
+        localStorage.setItem(PROFILE_KEY, JSON.stringify({
+            playerAvatar: normalizeAvatar(playerAvatar),
+            totalStars: totalStars,
+            playerName: nameInput ? nameInput.value : ''
+        }));
+    } catch (err) {}
+}
+
+function loadProfile() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+        if (saved.playerAvatar) playerAvatar = normalizeAvatar(saved.playerAvatar);
+        if (typeof saved.totalStars === 'number') totalStars = saved.totalStars;
+        if (saved.playerName) document.getElementById('playerName').value = saved.playerName;
+    } catch (err) {
+        playerAvatar = normalizeAvatar(playerAvatar);
+    }
+    document.getElementById('starCount').textContent = totalStars;
+}
+
+function hasSavedProgress() {
+    try {
+        return !!localStorage.getItem(PROGRESS_KEY);
+    } catch (err) {
+        return false;
+    }
+}
+
+function updateContinueButtons() {
+    const hasSave = hasSavedProgress();
+    ['homeContinueWrap', 'chooseContinueWrap'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = hasSave ? 'block' : 'none';
+    });
+}
+
+function saveProgress(showMessage) {
+    if (!currentSet || currentWordIndex >= currentSet.words.length || answerLocked) return;
+    try {
+        const nameInput = document.getElementById('playerName');
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+            setId: currentSet.id,
+            words: currentSet.words,
+            isPracticingMissed: isPracticingMissed,
+            practiceWords: practiceWords,
+            currentWordIndex: currentWordIndex,
+            score: score,
+            missedWords: missedWords,
+            attemptCount: attemptCount,
+            hintUsed: hintUsed,
+            revealedLetters: revealedLetters,
+            playerAvatar: normalizeAvatar(playerAvatar),
+            totalStars: totalStars,
+            playerName: nameInput ? nameInput.value : '',
+            savedAt: new Date().toISOString()
+        }));
+        saveProfile();
+        updateContinueButtons();
+        if (showMessage) {
+            const status = document.getElementById('saveStatus');
+            status.textContent = 'บันทึกเกมแล้ว กลับมาเล่นต่อได้เลย';
+            setTimeout(function() { status.textContent = ''; }, 2500);
+        }
+    } catch (err) {
+        if (showMessage) alert('บันทึกเกมไม่สำเร็จ ลองเปิดเกมจากเบราว์เซอร์อีกครั้งนะ');
+    }
+}
+
+function clearProgress() {
+    try {
+        localStorage.removeItem(PROGRESS_KEY);
+    } catch (err) {}
+    updateContinueButtons();
+}
+
+function continueSavedGame() {
+    let saved = null;
+    try {
+        saved = JSON.parse(localStorage.getItem(PROGRESS_KEY) || 'null');
+    } catch (err) {}
+    if (!saved) {
+        alert('ยังไม่มีเกมที่บันทึกไว้');
+        updateContinueButtons();
+        return;
+    }
+
+    const baseSet = wordSets.find(function(set) { return set.id === saved.setId; });
+    if (!baseSet) {
+        clearProgress();
+        alert('ไม่พบชุดคำศัพท์ที่บันทึกไว้');
+        return;
+    }
+
+    playerAvatar = normalizeAvatar(saved.playerAvatar || playerAvatar);
+    totalStars = typeof saved.totalStars === 'number' ? saved.totalStars : totalStars;
+    document.getElementById('starCount').textContent = totalStars;
+    document.getElementById('playerName').value = saved.playerName || document.getElementById('playerName').value;
+
+    isPracticingMissed = !!saved.isPracticingMissed;
+    practiceWords = Array.isArray(saved.practiceWords) ? saved.practiceWords : [];
+    currentSet = isPracticingMissed && Array.isArray(saved.words) && saved.words.length > 0
+        ? { id: baseSet.id, name: baseSet.name, thaiName: baseSet.thaiName, emoji: baseSet.emoji, words: saved.words }
+        : baseSet;
+    currentWordIndex = Math.min(saved.currentWordIndex || 0, currentSet.words.length - 1);
+    score = saved.score || 0;
+    missedWords = Array.isArray(saved.missedWords) ? saved.missedWords : [];
+    attemptCount = saved.attemptCount || 0;
+    hintUsed = Array.isArray(saved.hintUsed) ? saved.hintUsed : [false, false, false];
+    revealedLetters = Array.isArray(saved.revealedLetters) ? saved.revealedLetters : [];
+    answerLocked = false;
+
+    showScreen('gameScreen');
+    loadWord(true);
+}
 
 function generateAvatarSVG(hairStyle, hairColor, skinColor, accessories) {
     const hairPaths = {
@@ -427,11 +586,17 @@ function generateAvatarSVG(hairStyle, hairColor, skinColor, accessories) {
 }
 
 function init() {
+    loadProfile();
     renderAvatarOptions();
     renderSets();
     updateAvatarPreview();
-    document.getElementById('answerInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') checkAnswer();
+    updateContinueButtons();
+    document.getElementById('playerName').addEventListener('input', saveProfile);
+    document.getElementById('answerInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            checkAnswer();
+        }
     });
 }
 
@@ -447,6 +612,7 @@ function renderAvatarOptions() {
             playerAvatar.hairStyle = style.id;
             renderAvatarOptions();
             updateAvatarPreview();
+            saveProfile();
         };
         hairStyleContainer.appendChild(div);
     });
@@ -462,6 +628,7 @@ function renderAvatarOptions() {
             playerAvatar.hairColor = color.color;
             renderAvatarOptions();
             updateAvatarPreview();
+            saveProfile();
         };
         hairColorContainer.appendChild(div);
     });
@@ -477,13 +644,14 @@ function renderAvatarOptions() {
             playerAvatar.skinColor = color.color;
             renderAvatarOptions();
             updateAvatarPreview();
+            saveProfile();
         };
         skinColorContainer.appendChild(div);
     });
 }
 
 function updateAvatarPreview() {
-    document.getElementById('avatarPreview').innerHTML = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, playerAvatar.accessories);
+    document.getElementById('avatarPreview').innerHTML = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, getEquippedAccessories());
 }
 
 function goToAvatarCreator() {
@@ -492,6 +660,7 @@ function goToAvatarCreator() {
 }
 
 function saveAvatar() {
+    saveProfile();
     showScreen('chooseSetScreen');
 }
 
@@ -519,8 +688,11 @@ function showRewardPopup() {
 
 function closeReward() {
     if (pendingReward) {
-        playerAvatar.accessories.push(pendingReward.id);
+        playerAvatar = normalizeAvatar(playerAvatar);
+        if (playerAvatar.accessories.indexOf(pendingReward.id) === -1) playerAvatar.accessories.push(pendingReward.id);
+        if (playerAvatar.equippedAccessories.indexOf(pendingReward.id) === -1) playerAvatar.equippedAccessories.push(pendingReward.id);
         pendingReward = null;
+        saveProfile();
     }
     document.getElementById('rewardOverlay').classList.remove('active');
     document.getElementById('rewardPopup').classList.remove('active');
@@ -534,6 +706,7 @@ function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
     document.getElementById(screenId).classList.add('active');
     document.getElementById('totalStars').style.display = (screenId === 'gameScreen') ? 'block' : 'none';
+    updateContinueButtons();
 }
 
 const wordSets = [
@@ -802,29 +975,47 @@ function startGame(setId, practiceMode) {
     score = 0;
     missedWords = [];
     attemptCount = 0;
+    answerLocked = false;
     showScreen('gameScreen');
     loadWord();
 }
 
-function loadWord() {
+function updateHintButtons() {
+    ['hintBtn1', 'hintBtn2', 'hintBtn3'].forEach(function(id, index) {
+        const btn = document.getElementById(id);
+        btn.disabled = !!hintUsed[index];
+        btn.className = 'hint-btn' + (hintUsed[index] ? ' used' : '');
+    });
+}
+
+function setAnswerLocked(locked) {
+    answerLocked = locked;
+    const input = document.getElementById('answerInput');
+    const checkButton = document.getElementById('checkAnswerButton');
+    input.disabled = locked;
+    checkButton.disabled = locked;
+}
+
+function loadWord(keepWordState) {
     const word = currentSet.words[currentWordIndex];
-    attemptCount = 0;
-    hintUsed = [false, false, false];
-    revealedLetters = [];
+    if (!keepWordState) {
+        attemptCount = 0;
+        hintUsed = [false, false, false];
+        revealedLetters = [];
+    }
+    setAnswerLocked(false);
     document.getElementById('wordEmoji').textContent = word.emoji;
     document.getElementById('thaiMeaning').textContent = word.th;
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
     document.getElementById('feedback').className = 'feedback';
     document.getElementById('hintStatus').textContent = '';
-    ['hintBtn1', 'hintBtn2', 'hintBtn3'].forEach(function(id) {
-        document.getElementById(id).disabled = false;
-        document.getElementById(id).className = 'hint-btn';
-    });
+    updateHintButtons();
     updateDashes();
     const progress = ((currentWordIndex + 1) / currentSet.words.length) * 100;
     document.getElementById('progressFill').style.width = progress + '%';
     document.getElementById('progressText').textContent = 'คำที่ ' + (currentWordIndex + 1) + ' จาก ' + currentSet.words.length;
+    saveProgress(false);
 }
 
 function updateDashes() {
@@ -844,7 +1035,7 @@ function updateDashes() {
 }
 
 function useHint(hintNumber) {
-    if (hintUsed[hintNumber - 1]) return;
+    if (answerLocked || hintUsed[hintNumber - 1]) return;
     const word = currentSet.words[currentWordIndex];
     const letters = word.en.split('');
     const status = document.getElementById('hintStatus');
@@ -888,6 +1079,7 @@ function useHint(hintNumber) {
     }
     updateDashes();
     playSound('hint');
+    saveProgress(false);
 }
 
 function speakWord() {
@@ -899,6 +1091,7 @@ function speakWord() {
 }
 
 function checkAnswer() {
+    if (answerLocked) return;
     const input = document.getElementById('answerInput');
     const userAnswer = input.value.trim().toLowerCase();
     const word = currentSet.words[currentWordIndex];
@@ -910,6 +1103,7 @@ function checkAnswer() {
     const feedbackText = document.getElementById('feedbackText');
 
     if (normalizedUser === normalizedCorrect) {
+        setAnswerLocked(true);
         score++;
         feedback.className = 'feedback correct';
         feedbackEmoji.textContent = '🎉';
@@ -938,7 +1132,9 @@ function checkAnswer() {
             input.value = '';
             input.focus();
             playSound('wrong');
+            saveProgress(false);
         } else {
+            setAnswerLocked(true);
             feedback.className = 'feedback wrong';
             feedbackEmoji.textContent = '😢';
             feedbackText.textContent = 'คำตอบที่ถูกต้องคือ: ' + word.en;
@@ -959,6 +1155,7 @@ function checkAnswer() {
 function nextWord() {
     currentWordIndex++;
     if (currentWordIndex >= currentSet.words.length) {
+        clearProgress();
         showResults();
     } else {
         loadWord();
@@ -967,6 +1164,7 @@ function nextWord() {
 
 function showResults() {
     showScreen('resultsScreen');
+    saveProfile();
     const totalWords = currentSet.words.length;
     document.getElementById('scoreDisplay').textContent = score + ' / ' + totalWords;
     let stars = 1;
@@ -974,6 +1172,7 @@ function showResults() {
     else if (score >= 9) stars = 2;
     totalStars += stars;
     document.getElementById('starCount').textContent = totalStars;
+    saveProfile();
     const starsDisplay = document.getElementById('starsDisplay');
     starsDisplay.innerHTML = '';
     for (let i = 0; i < 3; i++) {
@@ -999,15 +1198,16 @@ function showResults() {
     }
 
     const finalPreview = document.getElementById('finalAvatarPreview');
-    finalPreview.innerHTML = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, playerAvatar.accessories);
+    finalPreview.innerHTML = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, getEquippedAccessories());
 
     const playerName = document.getElementById('playerName').value.trim();
     document.getElementById('avatarName').textContent = playerName ? '👧 ' + playerName : '👧 ตัวละครของคุณ';
 
     const accContainer = document.getElementById('avatarAccessories');
     accContainer.innerHTML = '';
-    if (playerAvatar.accessories.length > 0) {
-        playerAvatar.accessories.forEach(function(accId) {
+    const equippedAccessories = getEquippedAccessories();
+    if (equippedAccessories.length > 0) {
+        equippedAccessories.forEach(function(accId) {
             const acc = avatarData.accessories.find(function(a) { return a.id === accId; });
             if (acc) {
                 const badge = document.createElement('span');
@@ -1019,6 +1219,7 @@ function showResults() {
     } else {
         accContainer.innerHTML = '<span class="acc-badge">ยังไม่มีของตกแต่ง</span>';
     }
+    renderAccessoryTogglePanel();
 
     const missedContainer = document.getElementById('missedWordsContainer');
     const missedList = document.getElementById('missedWordsList');
@@ -1035,6 +1236,107 @@ function showResults() {
         missedContainer.style.display = 'none';
     }
     practiceWords = missedWords.slice();
+}
+
+function renderFinalAvatar() {
+    document.getElementById('finalAvatarPreview').innerHTML = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, getEquippedAccessories());
+    const accContainer = document.getElementById('avatarAccessories');
+    accContainer.innerHTML = '';
+    const equippedAccessories = getEquippedAccessories();
+    if (equippedAccessories.length > 0) {
+        equippedAccessories.forEach(function(accId) {
+            const acc = avatarData.accessories.find(function(a) { return a.id === accId; });
+            if (acc) {
+                const badge = document.createElement('span');
+                badge.className = 'acc-badge';
+                badge.textContent = acc.emoji + ' ' + acc.name;
+                accContainer.appendChild(badge);
+            }
+        });
+    } else {
+        accContainer.innerHTML = '<span class="acc-badge">ยังไม่ได้ใส่ของตกแต่ง</span>';
+    }
+}
+
+function renderAccessoryTogglePanel() {
+    const panel = document.getElementById('accessoryTogglePanel');
+    playerAvatar = normalizeAvatar(playerAvatar);
+    if (playerAvatar.accessories.length === 0) {
+        panel.innerHTML = '';
+        return;
+    }
+    panel.innerHTML = '<div class="accessory-toggle-title">เลือกของตกแต่งที่จะใส่ในรูป</div><div class="accessory-toggle-list" id="accessoryToggleList"></div>';
+    const list = document.getElementById('accessoryToggleList');
+    playerAvatar.accessories.forEach(function(accId) {
+        const acc = avatarData.accessories.find(function(a) { return a.id === accId; });
+        if (!acc) return;
+        const label = document.createElement('label');
+        label.className = 'acc-toggle';
+        const checked = playerAvatar.equippedAccessories.indexOf(accId) !== -1 ? ' checked' : '';
+        label.innerHTML = '<input type="checkbox" value="' + accId + '"' + checked + '> ' + acc.emoji + ' ' + acc.name;
+        label.querySelector('input').addEventListener('change', function(e) {
+            toggleAccessory(accId, e.target.checked);
+        });
+        list.appendChild(label);
+    });
+}
+
+function toggleAccessory(accId, shouldEquip) {
+    playerAvatar = normalizeAvatar(playerAvatar);
+    const equippedIndex = playerAvatar.equippedAccessories.indexOf(accId);
+    if (shouldEquip && equippedIndex === -1) playerAvatar.equippedAccessories.push(accId);
+    if (!shouldEquip && equippedIndex !== -1) playerAvatar.equippedAccessories.splice(equippedIndex, 1);
+    saveProfile();
+    renderFinalAvatar();
+    updateAvatarPreview();
+}
+
+function downloadFinalAvatarImage() {
+    const svgText = generateAvatarSVG(playerAvatar.hairStyle, playerAvatar.hairColor, playerAvatar.skinColor, getEquippedAccessories());
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 1100;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 900, 1100);
+        gradient.addColorStop(0, '#FFF5F5');
+        gradient.addColorStop(0.5, '#F0F8FF');
+        gradient.addColorStop(1, '#FFE4E1');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(90, 70, 720, 920, 36);
+            ctx.fill();
+        } else {
+            ctx.fillRect(90, 70, 720, 920);
+        }
+        ctx.drawImage(img, 150, 120, 600, 750);
+        ctx.fillStyle = '#FF6B6B';
+        ctx.font = 'bold 54px "Comic Neue", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        const playerName = document.getElementById('playerName').value.trim();
+        ctx.fillText(playerName || 'Spelling Star', 450, 940);
+        ctx.fillStyle = '#666666';
+        ctx.font = '32px "Comic Neue", Arial, sans-serif';
+        ctx.fillText('My decorated character', 450, 990);
+
+        const link = document.createElement('a');
+        const safeName = (playerName || 'spelling-star').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').toLowerCase();
+        link.download = safeName + '-avatar.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+    img.onerror = function() {
+        URL.revokeObjectURL(url);
+        alert('เซฟรูปไม่สำเร็จ ลองกดอีกครั้งนะ');
+    };
+    img.src = url;
 }
 
 function playAgain() {
